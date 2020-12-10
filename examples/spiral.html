@@ -4,10 +4,11 @@
     <script src="../turtle.js"></script>
     <script>
       const turtle = new Turtle();
-      turtle.speed('slowest');
+      turtle.bgcolor("teal");
+      turtle.color("white");
 
-      for(var i = 0; i < 4; i++) {
-        turtle.forward(100);
+      for(var i = 0; i < 100; i++) {
+        turtle.forward(i * 2);
         turtle.right(90);
       }
     </script>

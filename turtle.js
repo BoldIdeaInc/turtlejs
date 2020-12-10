@@ -27,19 +27,14 @@
     context.restore();
   }
 
-  function colorToRGBA(color) {
-    // Returns the color as an array of [r, g, b, a] -- all range from 0 - 255
-    // color must be a valid canvas fillStyle. This will cover most anything you'd want to use.
-    // Examples:
-    // colorToRGBA('red')  # [255, 0, 0, 255]
-    // colorToRGBA('#f00') # [255, 0, 0, 255]
-    const cvs = document.createElement('canvas');
-    cvs.height = 1;
-    cvs.width = 1;
-    const ctx = cvs.getContext('2d');
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 1, 1);
-    return ctx.getImageData(0, 0, 1, 1).data;
+  function parseColor(...args) {
+    // support r, g, b, a? arguments
+    if (args.length === 3) {
+      return `rgb(${[...args].join(',')})`;
+    } else if (arguments.length === 4) {
+      return `rgba(${[...args].join(',')})`;
+    }
+    return args[0];
   }
 
   // draw the turtle and the current image if redraw is true
@@ -128,6 +123,7 @@
         redraw: true,
         wrap: true,
         color: 'black',
+        bgcolor: '',
         speed: SPEEDS.normal,
         clear: false,
         animateMovement: true,
@@ -168,6 +164,7 @@
           this._turtleContext.lineTo(x + w / 2, y);
           this._turtleContext.lineTo(x, y + h);
           this._turtleContext.closePath();
+          this._turtleContext.strokeStyle = state.color;
           this._turtleContext.fillStyle = "green";
           this._turtleContext.fill();
           this._turtleContext.restore();
@@ -201,7 +198,8 @@
 
     speed(speed) {
       if (typeof(speed) === 'string') {
-        speed = SPEEDS[speed] || SPEEDS.normal;
+        speed = SPEEDS[speed];
+        if (typeof(speed) === 'undefined') speed = SPEEDS.normal
       }
       this._state.speed = speed;
       this._pushState();
@@ -212,7 +210,6 @@
     }
 
     _setPos(x, y) {
-      //console.log('setPos', x, y);
       this._state.x = parseFloat(x.toFixed(4));
       this._state.y = parseFloat(y.toFixed(4));
       this._pushState();
@@ -230,12 +227,13 @@
       let y = this._state.y;
 
       let remainingDistance = this._distanceTo(targetX, targetY);
+      let angle = Math.atan2(targetX - this._state.x, targetY - this._state.y);
 
       // trace out the forward steps
       while (remainingDistance > 0) {
         // calculate the new location of the turtle after doing the forward movement
-        const cosAngle = Math.cos(this._state.angle);
-        const sinAngle = Math.sin(this._state.angle)
+        const cosAngle = Math.cos(angle);
+        const sinAngle = Math.sin(angle);
         const newX = x + sinAngle * remainingDistance;
         const newY = y + cosAngle * remainingDistance;
 
@@ -279,14 +277,13 @@
     }
 
     async done() {
-      // TODO: set the animationDistance
-      const animationDistance = 3;
+      const startTime = (new Date()).getTime();
       // delay between steps
       const fps = 60; // note: this isn't "true fps", given processing time between frames
-      const stepDelay = 1000;
+      const stepDelay = 1000 / fps;
 
       let lastDrawnState = null;
-      for (const [i, state] of this._states.entries()) {
+      for (let [i, state] of this._states.entries()) {
         console.group(state);
         const nextState = this._states[i + 1];
 
@@ -299,23 +296,28 @@
         this._imageContext.lineWidth = state.width;
 
         // set color
-        //const [r, g, b, a] = colorToRGBA(state.color);
-        //this._imageContext.strokeStyle = "rgba(" + r + "," + g + "," + b + "," + a + ")";
         this._imageContext.strokeStyle = state.color;
+
+        // set bg color
+        this._turtleCanvas.style.backgroundColor = state.bgcolor;
 
         if (isDifferent(lastDrawnState, state)) {
           this._drawIf(state);
           lastDrawnState = state;
-          if (!state.instant) {
+          if (!state.instant && state.speed > 0) {
             await setTimeoutAsync(() => {}, stepDelay);
           }
         }
+
+        //const animationDistance = state.speed ? state.speed * 10 : 100;
+        const animationDistance = state.speed ? state.speed * state.speed : 500;
+        console.log('animationDistance:', animationDistance)
 
         // animate moving to new position
         if (nextState && nextState.animateMovement && (nextState.x != state.x || nextState.y != state.y)) {
           let remainingDistance = Math.hypot(state.x - nextState.x, state.y - nextState.y);
           let {x, y} = state;
-          console.log('drawing to', nextState.x, nextState.y);
+          console.debug('drawing to', nextState.x, nextState.y);
           while (remainingDistance > 0) {
             // get the angle betwen both points
             const angle = Math.atan2(nextState.x - state.x, nextState.y - state.y);
@@ -342,7 +344,7 @@
               this._imageContext.restore();
               this._drawIf(tempState);
               lastDrawnState = tempState;
-            }, 1000 / fps);
+            }, state.speed === 0 ? 0 : (1000 / fps));
 
             x = newX;
             y = newY;
@@ -353,11 +355,13 @@
       }
 
       this._states = [];
+      const endTime = (new Date()).getTime();
+      console.debug(`Drawn in ${(endTime - startTime) / 1000} seconds`);
     }
 
     forward(distance) {
-      const sinAngle = Math.sin(this._state.angle)
-      const cosAngle = Math.cos(this._state.angle);
+      const sinAngle = Math.sin(degToRad(this._state.angle));
+      const cosAngle = Math.cos(degToRad(this._state.angle));
       const targetX = this._state.x + sinAngle * distance;
       const targetY = this._state.y + cosAngle * distance;
       this._moveTo(targetX, targetY);
@@ -400,25 +404,25 @@
 
     // turn right by an angle in degrees
     right(angle) {
-      this._state.angle += degToRad(angle);
+      this._state.angle += angle;
       this._pushState();
     }
 
     // turn left by an angle in degrees
     left(angle) {
-      this._state.angle -= degToRad(angle);
+      this._state.angle -= angle;
       this._pushState();
     }
 
     // move the turtle to a particular coordinate (if pen is down, draw on the way there)
     goto(x, y) {
-      this._setPos(x, y);
+      this._moveTo(x, y);
     }
 
     // Go to the origin (0, 0) and rotate to 0 without drawing
     home() {
       this._state.instant = true;
-      this.angle(0);
+      this.setheading(0);
       this.tp(0, 0);
       this._state.instant = false;
     }
@@ -431,9 +435,13 @@
     }
 
     // set the angle of the turtle in degrees
-    angle(angle) {
-      this._state.angle = degToRad(angle);
+    setheading(angle) {
+      this._state.angle = angle;
       this._pushState();
+    }
+
+    setangle(angle) {
+      this.setheading(angle);
     }
 
     // set the width of the line
@@ -444,13 +452,12 @@
 
     // set the color of the line using RGB values in the range 0 - 255.
     color(color) {
-      // support r, g, b, a? arguments
-      if (arguments.length === 3) {
-        color = `rgb(${arguments.join(',')})`;
-      } else if (arguments.length === 4) {
-        color = `rgba(${arguments.join(',')})`;
-      }
-      this._state.color = color
+      this._state.color = parseColor(...arguments);
+      this._pushState();
+    }
+
+    bgcolor(color) {
+      this._state.bgcolor = parseColor(...arguments);
       this._pushState();
     }
 
@@ -460,9 +467,17 @@
     }
 
     repeat(n, action) {
-      for (const count = 1; count <= n; count++) {
+      for (let count = 1; count <= n; count++) {
         action();
       }
+    }
+
+    position() {
+      return [this._state.x, this._state.y];
+    }
+
+    heading() {
+      return this._state.angle;
     }
 
   }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <body>
+    <script src="../turtle.js"></script>
+    <script>
+      const turtle = new Turtle();
+      turtle.speed('fastest') 
+        
+      // the acute angle between the base and branch of the Y 
+      turtle.tp(0, -100);
+      let angle = 30
+        
+      // function to plot a Y 
+      function tree(size, level) {
+        if (level > 0) {
+          turtle.color(0, parseInt(255/level), 0) 
+            
+          // drawing the base 
+          turtle.forward(size) 
+    
+          turtle.right(angle) 
+    
+          // recursive call for the right subtree 
+          tree(0.8 * size, level-1) 
+            
+          turtle.color(0, parseInt(255/level), 0) 
+            
+          turtle.left( 2 * angle ) 
+    
+          // recursive call for the left subtree 
+          tree(0.8 * size, level-1) 
+           
+          turtle.color(0, parseInt(255/level), 0) 
+
+          turtle.right(angle) 
+          turtle.forward(-size) 
+        }
+      }
+                 
+      // tree of size 80 and level 7 
+      tree(80, 7) 
+    </script>
+  </body>
+</html>
