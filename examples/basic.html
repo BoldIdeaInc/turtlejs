@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <body>
+    <script src="../turtle.js"></script>
+    <script>
+      const turtle = new Turtle();
+
+      turtle.tp(50, 50);
+
+      for (let i=0; i<4; i++) {
+        turtle.forward(100);
+        turtle.right(60);
+      }
+      turtle.home();
+      /*
+      turtle.tp(0, -50);
+      turtle.angle(0);
+      */
+    </script>
+  </body>
+</html>
