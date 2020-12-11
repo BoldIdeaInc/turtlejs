@@ -284,7 +284,6 @@
 
       let lastDrawnState = null;
       for (let [i, state] of this._states.entries()) {
-        console.group(state);
         const nextState = this._states[i + 1];
 
         // update all state changes except for position
@@ -311,13 +310,11 @@
 
         //const animationDistance = state.speed ? state.speed * 10 : 100;
         const animationDistance = state.speed ? state.speed * state.speed : 500;
-        console.log('animationDistance:', animationDistance)
 
         // animate moving to new position
         if (nextState && nextState.animateMovement && (nextState.x != state.x || nextState.y != state.y)) {
           let remainingDistance = Math.hypot(state.x - nextState.x, state.y - nextState.y);
           let {x, y} = state;
-          console.debug('drawing to', nextState.x, nextState.y);
           while (remainingDistance > 0) {
             // get the angle betwen both points
             const angle = Math.atan2(nextState.x - state.x, nextState.y - state.y);
@@ -351,12 +348,11 @@
             remainingDistance -= animationDistance;
           }
         }
-        console.groupEnd();
       }
 
       this._states = [];
       const endTime = (new Date()).getTime();
-      console.debug(`Drawn in ${(endTime - startTime) / 1000} seconds`);
+      //console.debug(`Drawn in ${(endTime - startTime) / 1000} seconds`);
     }
 
     forward(distance) {
