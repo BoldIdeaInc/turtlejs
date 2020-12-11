@@ -153,7 +153,7 @@
           this._turtleContext.translate(x, y);
 
           // rotate about the center of the turtle
-          this._turtleContext.rotate(-state.angle);
+          this._turtleContext.rotate(-degToRad(state.angle));
 
           // move the turtle back to its position
           this._turtleContext.translate(-x, -y);
