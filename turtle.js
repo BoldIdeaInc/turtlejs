@@ -53,6 +53,52 @@
     return false;
   }
 
+  function debounce(func, wait, immediate) {
+    var timeout;
+    return function() {
+      var context = this, args = arguments;
+      var later = function() {
+        timeout = null;
+        if (!immediate) func.apply(context, args);
+      };
+      var callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+      if (callNow) func.apply(context, args);
+    };
+  };
+
+  function resizeCanvas(canvas, width, height) {
+    // FIXME: This seems to have a xerox effect. The more times this function is
+    // called, the more blurry the image becomes.
+
+    // create temporary canvas to save image
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+
+    // stamp current image onto tempCanvas
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(canvas, 0, 0);
+
+    // resize original canvas
+    canvas.width = width;
+    canvas.height = height;
+
+    // stamp tempCtx in the center of canvas
+    newCtx = canvas.getContext('2d');
+    const x = (canvas.width / 2) - (tempCanvas.width / 2);
+    const y = (canvas.height / 2) - (tempCanvas.height / 2);
+    newCtx.drawImage(tempCanvas, x, y);
+  };
+
+  function fitCanvasToWindow(canvas) {
+    resizeCanvas(canvas, window.innerWidth, window.innerHeight);
+    canvas.style.position = 'absolute';
+    canvas.style.top = 0;
+    canvas.style.left = 0;
+  }
+
   SPEEDS = {
     fastest: 0,
     fast: 10,
@@ -65,10 +111,7 @@
     constructor(canvas) {
       if (typeof(canvas) === 'undefined') {
         // create a default canvas that covers the whole page
-        canvas = document.createElement('canvas');
-        canvas.width = 800;
-        canvas.height = 600;
-        document.body.appendChild(canvas);
+        canvas = this.createFullscreenCanvas();
       }
 
       // create hidden canvas, same size as given canvas
@@ -94,6 +137,21 @@
       document.addEventListener('DOMContentLoaded', () => {
         this.done();
       });
+    }
+
+    // create a full-screen responsive canvas
+    createFullscreenCanvas() {
+      const canvas = document.createElement('canvas');
+      document.documentElement.style.height = '100%';
+      document.body.style.height = '100%';
+      document.body.style.margin = '0';
+      document.body.appendChild(canvas);
+      function onResize() {
+        fitCanvasToWindow(canvas);
+      }
+      onResize();
+      window.addEventListener('resize', debounce(onResize, 250));
+      return canvas;
     }
 
     _stateHasChanged() {
