@@ -413,12 +413,22 @@
       //console.debug(`Drawn in ${(endTime - startTime) / 1000} seconds`);
     }
 
-    forward(distance) {
+    _distanceTarget(distance) {
       const sinAngle = Math.sin(degToRad(this._state.angle));
       const cosAngle = Math.cos(degToRad(this._state.angle));
       const targetX = this._state.x + sinAngle * distance;
       const targetY = this._state.y + cosAngle * distance;
-      this._moveTo(targetX, targetY);
+      return {x: targetX, y: targetY};
+    }
+
+    forward(distance) {
+      const target = this._distanceTarget(distance);
+      this._moveTo(target.x, target.y);
+    }
+
+    backward(distance) {
+      const target = this._distanceTarget(distance * -1);
+      this._moveTo(target.x, target.y);
     }
 
     // turn edge wrapping on/off
