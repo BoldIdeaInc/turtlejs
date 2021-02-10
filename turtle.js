@@ -546,6 +546,17 @@
 
   }
 
+  // Method aliases
+  Turtle.prototype.fd = Turtle.prototype.forward;
+  Turtle.prototype.fwd = Turtle.prototype.forward;
+  Turtle.prototype.bk = Turtle.prototype.backward;
+  Turtle.prototype.back = Turtle.prototype.backward;
+  Turtle.prototype.rt = Turtle.prototype.right;
+  Turtle.prototype.lt = Turtle.prototype.left;
+  Turtle.prototype.setpos = Turtle.prototype.goto;
+  Turtle.prototype.setposition = Turtle.prototype.goto;
+  Turtle.prototype.seth = Turtle.prototype.setheading;
+
   window.Turtle = Turtle;
 
 })();
