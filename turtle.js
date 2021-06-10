@@ -322,7 +322,12 @@
         }
         // if wrap is on, trace a part segment of the path and wrap on boundary if necessary
         if (this._state.wrap) {
-          if (newX > maxX) xWrap(maxX, minX);
+          // prevent infinite loop when wrapping
+          if (this._imageContext.canvas.width === 0 || this._imageContext.canvas.height === 0) {
+            console.debug("Cannot wrap on canvas that has no width or height");
+            noWrap();
+          }
+          else if (newX > maxX) xWrap(maxX, minX);
           else if (newX < minX) xWrap(minX, maxX);
           else if (newY > maxY) yWrap(maxY, minY);
           else if (newY < minY) yWrap(minY, maxY);
