@@ -237,7 +237,9 @@
     }
 
     _drawIf(state) {
-      if (state.redraw) this._draw(state);
+      if (state.redraw) {
+        this._draw(state);
+      }
     }
 
     // clear the display, don't move the turtle
@@ -388,6 +390,10 @@
         if (nextState && nextState.animateMovement && (nextState.x != state.x || nextState.y != state.y)) {
           let remainingDistance = Math.hypot(state.x - nextState.x, state.y - nextState.y);
           let {x, y} = state;
+
+          // KLUDGE: this shouldn't be needed -- but w/o it the turtle may skip drawing a segments
+          this._pushState();
+
           while (remainingDistance > 0) {
             // get the angle betwen both points
             const angle = Math.atan2(nextState.x - state.x, nextState.y - state.y);
@@ -433,8 +439,7 @@
         await this.done();
       }
 
-      // KLUDGE: this shouldn't be needed -- but w/o it the pen won't draw on next done()
-      // re-set initial state for next call to done()
+      // KLUDGE: this shouldn't be needed -- but w/o it the turtle may skip drawing a segments
       this._pushState();
     }
 
@@ -446,14 +451,14 @@
       return {x: targetX, y: targetY};
     }
 
-    async forward(distance) {
+    forward(distance) {
       const target = this._distanceTarget(distance);
-      await this._moveTo(target.x, target.y);
+      this._moveTo(target.x, target.y);
     }
 
-    async backward(distance) {
+    backward(distance) {
       const target = this._distanceTarget(distance * -1);
-      await this._moveTo(target.x, target.y);
+      this._moveTo(target.x, target.y);
     }
 
     // turn edge wrapping on/off
@@ -463,17 +468,17 @@
     }
 
     // show/hide the turtle
-    async hideTurtle() {
+    hideTurtle() {
       this._state.visible = false;
       this._pushState();
-      await this.done();
+      this.done();
     }
 
     // show/hide the turtle
-    async showTurtle() {
+    showTurtle() {
       this._state.visible = true;
       this._pushState();
-      await this.done();
+      this.done();
     }
 
     // turn on/off redrawing
@@ -494,51 +499,51 @@
     }
 
     // turn right by an angle in degrees
-    async right(angle) {
+    right(angle) {
       this._state.angle += angle;
       this._pushState();
-      await this.done();
+      this.done();
     }
 
     // turn left by an angle in degrees
-    async left(angle) {
+    left(angle) {
       this._state.angle -= angle;
       this._pushState();
-      await this.done();
+      this.done();
     }
 
     // move the turtle to a particular coordinate (if pen is down, draw on the way there)
-    async goto(x, y) {
-      await this._moveTo(x, y);
+    goto(x, y) {
+      this._moveTo(x, y);
     }
 
     // Go to the origin (0, 0) and rotate to 0 without drawing
-    async home() {
+    home() {
       this._state.instant = true;
       this.setheading(0);
       this.tp(0, 0);
       this._state.instant = false;
-      await this.done();
+      this.done();
     }
 
     // move the turtle to a particular coordinate (don't draw, move instantly)
-    async tp(x, y) {
+    tp(x, y) {
       this._state.animateMovement = false;
       this._setPos(x, y);
       this._state.animateMovement = true;
-      await this.done();
+      this.done();
     }
 
     // set the angle of the turtle in degrees
-    async setheading(angle) {
+    setheading(angle) {
       this._state.angle = angle;
       this._pushState();
-      await this.done();
+      this.done();
     }
 
-    async setangle(angle) {
+    setangle(angle) {
       this.setheading(angle);
-      await this.done();
+      this.done();
     }
 
     // set the width of the line
