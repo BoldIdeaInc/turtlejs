@@ -275,7 +275,7 @@
 
     // Trace the forward motion of the turtle, allowing for possible
     // wrap-around at the boundaries of the canvas.
-    _moveTo(targetX, targetY) {
+    async _moveTo(targetX, targetY) {
       // get the boundaries of the canvas
       const maxX = this._imageContext.canvas.width / 2;
       const minX = -this._imageContext.canvas.width / 2;
@@ -337,17 +337,27 @@
           noWrap();
         }
       }
+
+      await this.done();
     }
 
     async done() {
+      if (this._active) return;
+      this._active = true;
+
       const startTime = (new Date()).getTime();
       // delay between steps
       const fps = 60; // note: this isn't "true fps", given processing time between frames
       const stepDelay = 1000 / fps;
 
       let lastDrawnState = null;
-      for (let [i, state] of this._states.entries()) {
-        const nextState = this._states[i + 1];
+
+      const currentStates = this._states;
+      this._states = [];
+
+      for (let [i, state] of currentStates.entries()) {
+        // nextState is used for change in position, these "delta" states will always be pushed simultaneously.
+        const nextState = currentStates[i + 1];
 
         // update all state changes except for position
         if (state.clear || state.reset) {
@@ -413,9 +423,19 @@
         }
       }
 
-      this._states = [];
       const endTime = (new Date()).getTime();
       //console.debug(`Drawn in ${(endTime - startTime) / 1000} seconds`);
+
+      this._active = false;
+
+      // if more states were added since the last done() call, process those states.
+      if (this._states.length > 0) {
+        await this.done();
+      }
+
+      // KLUDGE: this shouldn't be needed -- but w/o it the pen won't draw on next done()
+      // re-set initial state for next call to done()
+      this._pushState();
     }
 
     _distanceTarget(distance) {
@@ -426,14 +446,14 @@
       return {x: targetX, y: targetY};
     }
 
-    forward(distance) {
+    async forward(distance) {
       const target = this._distanceTarget(distance);
-      this._moveTo(target.x, target.y);
+      await this._moveTo(target.x, target.y);
     }
 
-    backward(distance) {
+    async backward(distance) {
       const target = this._distanceTarget(distance * -1);
-      this._moveTo(target.x, target.y);
+      await this._moveTo(target.x, target.y);
     }
 
     // turn edge wrapping on/off
@@ -443,15 +463,17 @@
     }
 
     // show/hide the turtle
-    hideTurtle() {
+    async hideTurtle() {
       this._state.visible = false;
       this._pushState();
+      await this.done();
     }
 
     // show/hide the turtle
-    showTurtle() {
+    async showTurtle() {
       this._state.visible = true;
       this._pushState();
+      await this.done();
     }
 
     // turn on/off redrawing
@@ -472,45 +494,51 @@
     }
 
     // turn right by an angle in degrees
-    right(angle) {
+    async right(angle) {
       this._state.angle += angle;
       this._pushState();
+      await this.done();
     }
 
     // turn left by an angle in degrees
-    left(angle) {
+    async left(angle) {
       this._state.angle -= angle;
       this._pushState();
+      await this.done();
     }
 
     // move the turtle to a particular coordinate (if pen is down, draw on the way there)
-    goto(x, y) {
-      this._moveTo(x, y);
+    async goto(x, y) {
+      await this._moveTo(x, y);
     }
 
     // Go to the origin (0, 0) and rotate to 0 without drawing
-    home() {
+    async home() {
       this._state.instant = true;
       this.setheading(0);
       this.tp(0, 0);
       this._state.instant = false;
+      await this.done();
     }
 
     // move the turtle to a particular coordinate (don't draw, move instantly)
-    tp(x, y) {
+    async tp(x, y) {
       this._state.animateMovement = false;
       this._setPos(x, y);
       this._state.animateMovement = true;
+      await this.done();
     }
 
     // set the angle of the turtle in degrees
-    setheading(angle) {
+    async setheading(angle) {
       this._state.angle = angle;
       this._pushState();
+      await this.done();
     }
 
-    setangle(angle) {
+    async setangle(angle) {
       this.setheading(angle);
+      await this.done();
     }
 
     // set the width of the line
