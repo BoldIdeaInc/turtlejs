@@ -111,7 +111,6 @@
         if (canvas.width === 0 || canvas.height === 0) {
           setTimeout(check, 100);
         } else {
-          console.log('Canvas is ready');
           resolve(canvas);
         }
       }
