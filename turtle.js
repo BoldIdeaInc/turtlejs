@@ -99,6 +99,26 @@
     canvas.style.left = 0;
   }
 
+  function waitForCanvas(canvas) {
+    return new Promise((resolve, reject) => {
+      const startTime = (new Date()).getTime();
+      function check() {
+        const now = (new Date()).getTime();
+        if (now - startTime > (1000 * 60 * 10)) {
+          const error = new Error('waitForCanvas took longer than 10 seconds');
+          reject(error);
+        }
+        if (canvas.width === 0 || canvas.height === 0) {
+          setTimeout(check, 100);
+        } else {
+          console.log('Canvas is ready');
+          resolve(canvas);
+        }
+      }
+      check();
+    });
+  }
+
   SPEEDS = {
     fastest: 0,
     fast: 10,
@@ -346,6 +366,8 @@
     async done() {
       if (this._active) return;
       this._active = true;
+
+      await waitForCanvas(this._imageCanvas);
 
       const startTime = (new Date()).getTime();
       // delay between steps
